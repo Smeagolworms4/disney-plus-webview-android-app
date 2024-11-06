@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - '**' # Trigger build on every commit to any branch
   pull_request:
     branches:
       - main
@@ -64,34 +65,23 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
   release:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Set up JDK
-        uses: actions/setup-java@v2
+      - name: Download APK Artifacts
+        uses: actions/download-artifact@v2
         with:
-          distribution: 'temurin'
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-        with:
-          api-level: ${{ env.SDK_VERSION }}
-          build-tools: '35.0.0'
-
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x ./gradlew
-
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
+          name: release-apks
 
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: app/build/outputs/apk/release/*.apk
+          files: '*.apk'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
